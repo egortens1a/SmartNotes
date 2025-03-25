@@ -1,0 +1,96 @@
+<NoteEditor>:
+    orientation: 'vertical'
+    spacing: 5
+
+    BoxLayout:
+        size_hint_y: 0.1
+        spacing: 5
+        ToggleButton:
+            text: 'Edit mode' if root.edit_mode else 'Preview mode'
+            on_press: root.edit_mode = not root.edit_mode
+
+    ScrollView:
+        id: main_scroll
+        scroll_y: 1
+
+        BoxLayout:
+            orientation: 'vertical'
+            size_hint_y: None
+            height: self.minimum_height
+
+            TextInput:
+                id: editor
+                text: root.note_content
+                font_name: 'data/fonts/RobotoMono-Regular.ttf'
+                background_color: (0.9, 0.9, 0.9, 1)
+                foreground_color: (0, 0, 0, 1)
+                cursor_color: (0, 0, 0, 1)
+                size_hint_y: None
+                height: max(self.minimum_height, root.height * 0.4) if root.edit_mode else 0
+                opacity: 1 if root.edit_mode else 0
+                disabled: not root.edit_mode
+                multiline: True
+                padding: 10
+                on_text: root.update_preview()
+
+            Label:
+                id: preview
+                text: root.preview_content
+                markup: True
+                size_hint_y: None
+                height: max(self.texture_size[1], root.height * 0.4) if not root.edit_mode else 0
+                text_size: self.width, None
+                padding: 10
+                opacity: 0 if root.edit_mode else 1
+                disabled: root.edit_mode
+
+    Button:
+        text: 'Save'
+        size_hint_y: 0.1
+        on_press: root.save_note()
+
+<InputDialog>:
+    size_hint: (0.8, 0.4)
+    title: ''
+    BoxLayout:
+        orientation: 'vertical'
+        padding: 10
+        spacing: 10
+        TextInput:
+            id: input
+            hint_text: ''
+            size_hint_y: 0.6
+        BoxLayout:
+            size_hint_y: 0.4
+            spacing: 10
+            Button:
+                text: 'Cancel'
+                on_press: root.dismiss()
+            Button:
+                text: 'OK'
+                on_press: root.on_ok()
+
+<MainPanel>:
+    file_chooser: file_chooser
+    note_editor: note_editor
+
+    orientation: 'horizontal'
+    BoxLayout:
+        size_hint_x: 0.2
+        orientation: 'vertical'
+        Button:
+            text: 'New Note'
+            size_hint_y: 0.1
+            on_press: root.show_new_note_dialog()
+        Button:
+            text: 'New Folder'
+            size_hint_y: 0.1
+            on_press: root.show_new_folder_dialog()
+        FileChooserListView:
+            id: file_chooser
+            size_hint_y: 0.8
+            filters: ['*.md']
+            on_selection: root.load_note(file_chooser.selection)
+    NoteEditor:
+        id: note_editor
+        size_hint_x: 0.8
