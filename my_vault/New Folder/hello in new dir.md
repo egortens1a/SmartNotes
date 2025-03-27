@@ -1,0 +1,3 @@
+# hello in new dir
+
+Start writing here...

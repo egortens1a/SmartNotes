@@ -1,77 +1,62 @@
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
-from kivy.properties import StringProperty, ObjectProperty
+from kivy.properties import ObjectProperty
 from kivy.core.window import Window
 from kivy.lang import Builder
-from kivy.uix.filechooser import FileChooserListView
-from kivy.uix.popup import Popup
-from kivy.uix.textinput import TextInput
-from kivy.uix.button import Button
-from kivy.uix.label import Label
 
 import time
 import os
 
+from kivy.uix.popup import Popup
+
 import NoteEditor
-from InputDialog import InputDialog
+import InputDialog
 
 
-Builder.load_file("SmartNotes.kv")
+Builder.load_file("SmartNotesRefactor.kv")
 
-class MarkdownPreview(BoxLayout):
-    text = StringProperty('')
-
+class SearchDialog(Popup):
+    def do_search(self, query):
+        self.ids.search_results.text = f"Результаты поиска по запросу '{query}':\n\n(функция поиска в разработке)"
 
 class MainPanel(BoxLayout):
-    """Главная панель приложения с файловым менеджером и редактором"""
-
     vault_dir = 'my_vault'
     file_chooser = ObjectProperty(None)
     note_editor = ObjectProperty(None)
 
     def __init__(self, **kwargs):
-        """
-        Инициализирует главную панель
-        Создаёт папку для заметок если её нет
-        """
         super().__init__(**kwargs)
         if not os.path.exists(self.vault_dir):
             os.makedirs(self.vault_dir)
         self.file_chooser.path = self.vault_dir
         self.file_chooser._update_files()
 
+    def show_search_dialog(self):
+        dialog = SearchDialog()
+        dialog.open()
+
     def load_note(self, selection):
-        """
-        Загружает заметку из файла
-        Args:
-            selection: список выбранных файлов
-        """
         if selection:
             self.note_editor.current_file = selection[0]
             try:
                 with open(selection[0], 'r', encoding='utf-8') as f:
                     self.note_editor.note_content = f.read()
-                self.note_editor.update_preview()
+                self.note_editor.update_preview(force=True)
             except Exception as e:
                 print(f"Error loading note: {e}")
 
     def show_new_note_dialog(self):
-        """
-        Показывает диалог создания новой заметки
-        """
-
         def create_note(filename):
-            """Создаёт новую заметку с указанным именем"""
             if not filename:
                 return
             if not filename.endswith('.md'):
                 filename += '.md'
-            new_note_path = os.path.join(self.vault_dir, filename)
+            new_note_path = os.path.join(self.file_chooser.path, filename)
 
             if os.path.exists(new_note_path):
                 base, ext = os.path.splitext(filename)
                 timestamp = str(int(time.time()))
-                new_note_path = os.path.join(self.vault_dir, f"{base}_{timestamp}{ext}")
+                new_note_path = os.path.join(self.file_chooser.path, f"{base}_{timestamp}{ext}")
 
             try:
                 with open(new_note_path, 'w', encoding='utf-8') as f:
@@ -81,48 +66,37 @@ class MainPanel(BoxLayout):
             except Exception as e:
                 print(f"Error creating note: {e}")
 
-        dialog = InputDialog(
-            title="New Note",
-            hint_text="Enter note name (without .md)",
+        dialog = InputDialog.InputDialog(
+            title="Новая заметка",
+            hint_text="Введите название заметки (без .md)",
             callback=create_note
         )
         dialog.open()
 
     def show_new_folder_dialog(self):
-        """
-        Показывает диалог создания новой папки
-        """
-
         def create_folder(foldername):
-            """Создаёт новую папку с указанным именем"""
             if not foldername:
                 return
-            new_folder_path = os.path.join(self.vault_dir, foldername)
+            new_folder_path = os.path.join(self.file_chooser.path, foldername)
             try:
                 os.makedirs(new_folder_path, exist_ok=True)
                 self.file_chooser._update_files()
             except Exception as e:
                 print(f"Error creating folder: {e}")
 
-        dialog = InputDialog(
-            title="New Folder",
-            hint_text="Enter folder name",
+        dialog = InputDialog.InputDialog(
+            title="Новая папка",
+            hint_text="Введите название папки",
             callback=create_folder
         )
         dialog.open()
 
 
-class ObsidianApp(App):
-    """Главный класс приложения"""
-
+class SmartNotes(App):
     def build(self):
-        """
-        Создаёт и возвращает главный виджет приложения
-        return: экземпляр MainPanel
-        """
         Window.size = (1200, 800)
         return MainPanel()
 
 
 if __name__ == '__main__':
-    ObsidianApp().run()
+    SmartNotes().run()

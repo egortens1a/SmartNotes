@@ -3,44 +3,51 @@ from bs4 import BeautifulSoup
 
 from kivy.properties import StringProperty, BooleanProperty
 from kivy.uix.boxlayout import BoxLayout
-
+from kivy.uix.popup import Popup
+from kivy.uix.label import Label
 
 class NoteEditor(BoxLayout):
-    """Основной редактор с Markdown-разметкой и превью"""
-
     note_content = StringProperty('')
     preview_content = StringProperty('')
     current_file = StringProperty(None)
     edit_mode = BooleanProperty(True)
 
-    def on_edit_mode(self, instance, value):
-        """
-        Обработчик изменения режима редактирования/просмотра
-        Args:
-            instance: экземпляр виджета
-            value: новое значение режима (True - редактирование)
-        """
-        self.ids.editor.height = max(self.ids.editor.minimum_height, self.height * 0.4) if value else 0
-        self.ids.preview.height = max(self.ids.preview.texture_size[1], self.height * 0.4) if not value else 0
-        self.ids.main_scroll.scroll_y = 1
+    def toggle_mode(self):
+        self.edit_mode = not self.edit_mode
+        self.update_preview(force=True)
+        self.ids.editor.height = max(self.ids.editor.minimum_height, self.height * 0.7) if self.edit_mode else 0
+        self.ids.preview.height = max(self.ids.preview.texture_size[1], self.height * 0.7) if not self.edit_mode else 0
+
+    def show_brush_menu(self):
+        popup = Popup(title="Инструменты рисования",
+                      size_hint=(0.4, 0.4))
+        popup.content = Label(text="Инструменты рисования в разработке")
+        popup.open()
+
+    def summarize(self):
+        popup = Popup(title="Суммаризация текста",
+                      size_hint=(0.6, 0.6))
+        popup.content = Label(text="Суммаризация текста в разработке")
+        popup.open()
+
+    def extract_keywords(self):
+        popup = Popup(title="Ключевые слова",
+                      size_hint=(0.5, 0.5))
+        popup.content = Label(text="Извлечение ключевых слов в разработке")
+        popup.open()
 
     def save_note(self):
-        """
-        Сохраняет текущую заметку в файл
-        """
         if self.current_file:
             with open(self.current_file, 'w', encoding='utf-8') as f:
                 f.write(self.note_content)
+            popup = Popup(title="Сохранено",
+                          size_hint=(0.3, 0.2))
+            popup.content = Label(text="Файл успешно сохранен")
+            popup.open()
 
-    def update_preview(self):
-        """
-        Обновляет превью Markdown-разметки
-        Преобразует Markdown в форматированный текст для отображения
-        """
-        markdown_text = self.ids.editor.text
-        self.note_content = markdown_text
-
-        if not self.edit_mode:
+    def update_preview(self, force=False):
+        if not self.edit_mode or force:
+            markdown_text = self.ids.editor.text
             html = markdown2.markdown(markdown_text)
             soup = BeautifulSoup(html, 'html.parser')
 
@@ -59,7 +66,6 @@ class NoteEditor(BoxLayout):
             text = text.replace('<p>', '').replace('</p>', '\\n')
             text = text.replace('<br/>', '\\n')
 
-            text = ''.join(BeautifulSoup(text, 'html.parser').find_all(text=True))
+            text = ''.join(BeautifulSoup(text, 'html.parser').find_all(string=True))
 
             self.preview_content = text
-            self.ids.preview.height = max(self.ids.preview.texture_size[1], self.height * 0.4)
