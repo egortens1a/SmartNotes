@@ -1,0 +1,151 @@
+
+<InputDialog>:
+    size_hint: (0.8, 0.4)
+    title: ''
+    BoxLayout:
+        orientation: 'vertical'
+        padding: 10
+        spacing: 10
+        TextInput:
+            id: input
+            hint_text: ''
+            size_hint_y: 0.6
+        BoxLayout:
+            size_hint_y: 0.4
+            spacing: 10
+            Button:
+                text: 'Cancel'
+                on_press: root.dismiss()
+            Button:
+                text: 'OK'
+                on_press: root.on_ok()
+
+<NoteEditor>:
+    orientation: 'vertical'
+    spacing: 5
+
+    ScrollView:
+        id: main_scroll
+        scroll_y: 1
+
+        BoxLayout:
+            orientation: 'vertical'
+            size_hint_y: None
+            height: self.minimum_height
+
+            TextInput:
+                id: editor
+                text: root.note_content
+                font_name: 'data/fonts/RobotoMono-Regular.ttf'
+                background_color: (0.9, 0.9, 0.9, 1)
+                foreground_color: (0, 0, 0, 1)
+                cursor_color: (0, 0, 0, 1)
+                size_hint_y: None
+                height: max(self.minimum_height, root.height) if root.edit_mode else 0
+                multiline: True
+                padding: 10
+                on_text: root.update_preview()
+                opacity: 1 if root.edit_mode else 0
+                disabled: not root.edit_mode
+
+            Label:
+                id: preview
+                text: root.preview_content
+                markup: True
+                size_hint_y: None
+                height: max(self.texture_size[1], root.height) if not root.edit_mode else 0
+                text_size: self.width, None
+                padding: 10
+                halign: 'left'
+                valign: 'top'
+                opacity: 0 if root.edit_mode else 1
+                disabled: root.edit_mode
+
+    BoxLayout:
+        size_hint_y: 0.1
+        spacing: 5
+        padding: 5
+
+        Button:
+            text: 'Режим: Просмотр' if not root.edit_mode else 'Режим: Редактор'
+            on_press: root.toggle_mode()
+            size_hint_x: 0.2
+
+        Button:
+            text: 'Кисти'
+            size_hint_x: 0.15
+            on_press: root.show_brush_menu()
+
+        Button:
+            text: 'Суммаризация'
+            size_hint_x: 0.2
+            on_press: root.summarize()
+
+        Button:
+            text: '+Ключевые слова'
+            size_hint_x: 0.2
+            on_press: root.extract_keywords()
+
+        Button:
+            text: 'Сохранить'
+            size_hint_x: 0.15
+            on_press: root.save_note()
+            background_color: (0.2, 0.6, 0.2, 1)
+
+<SearchDialog>:
+    size_hint: (0.8, 0.6)
+    title: 'Поиск заметок'
+    BoxLayout:
+        orientation: 'vertical'
+        padding: 10
+        spacing: 10
+        TextInput:
+            id: search_input
+            hint_text: 'Введите ключевые слова для поиска'
+            size_hint_y: 0.2
+        ScrollView:
+            size_hint_y: 0.6
+            Label:
+                id: search_results
+                text: ''
+                size_hint_y: None
+                height: self.texture_size[1]
+                text_size: self.width, None
+        BoxLayout:
+            size_hint_y: 0.2
+            spacing: 10
+            Button:
+                text: 'Отмена'
+                on_press: root.dismiss()
+            Button:
+                text: 'Поиск'
+                on_press: root.do_search(search_input.text)
+
+<MainPanel>:
+    file_chooser: file_chooser
+    note_editor: note_editor
+
+    orientation: 'horizontal'
+    BoxLayout:
+        size_hint_x: 0.2
+        orientation: 'vertical'
+        Button:
+            text: 'Новая заметка'
+            size_hint_y: 0.1
+            on_press: root.show_new_note_dialog()
+        Button:
+            text: 'Новая папка'
+            size_hint_y: 0.1
+            on_press: root.show_new_folder_dialog()
+        Button:
+            text: 'Поиск'
+            size_hint_y: 0.1
+            on_press: root.show_search_dialog()
+        FileChooserListView:
+            id: file_chooser
+            size_hint_y: 0.7
+            filters: ['*.md']
+            on_selection: root.load_note(file_chooser.selection)
+    NoteEditor:
+        id: note_editor
+        size_hint_x: 0.8
