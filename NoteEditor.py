@@ -52,20 +52,20 @@ class NoteEditor(BoxLayout):
             soup = BeautifulSoup(html, 'html.parser')
 
             text = str(soup)
-            text = text.replace('<h1>', '[size=24][b]').replace('</h1>', '[/b][/size]\\n')
-            text = text.replace('<h2>', '[size=20][b]').replace('</h2>', '[/b][/size]\\n')
-            text = text.replace('<h3>', '[size=18][b]').replace('</h3>', '[/b][/size]\\n')
+            text = text.replace('<h1>', '[size=24][b]').replace('</h1>', '[/b][/size]')
+            text = text.replace('<h2>', '[size=20][b]').replace('</h2>', '[/b][/size]')
+            text = text.replace('<h3>', '[size=18][b]').replace('</h3>', '[/b][/size]')
             text = text.replace('<strong>', '[b]').replace('</strong>', '[/b]')
             text = text.replace('<em>', '[i]').replace('</em>', '[/i]')
             text = text.replace('<code>', '[font=RobotoMono-Regular][color=00ff00]').replace('</code>',
                                                                                              '[/color][/font]')
-            text = text.replace('<pre>', '[font=RobotoMono-Regular]\\n').replace('</pre>', '\\n[/font]')
-            text = text.replace('<li>', '• ').replace('</li>', '\\n')
+            text = text.replace('<pre>', '[font=RobotoMono-Regular]').replace('</pre>', '[/font]')
+            text = text.replace('<li>', '• ').replace('</li>', '')
             text = text.replace('<ul>', '').replace('</ul>', '')
             text = text.replace('<ol>', '').replace('</ol>', '')
-            text = text.replace('<p>', '').replace('</p>', '\\n')
-            text = text.replace('<br/>', '\\n')
+            text = text.replace('<p>', '').replace('</p>', '')
+            text = text.replace('<br/>', '')
 
             text = ''.join(BeautifulSoup(text, 'html.parser').find_all(string=True))
 
-            self.preview_content = text
+            self.preview_content = '[color=000000]' + text +  '[/color]'

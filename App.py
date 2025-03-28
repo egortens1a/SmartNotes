@@ -10,14 +10,11 @@ import os
 from kivy.uix.popup import Popup
 
 import NoteEditor
-import InputDialog
+import Dialogs
 
 
-Builder.load_file("SmartNotesRefactor.kv")
+Builder.load_file("SmartNotes.kv")
 
-class SearchDialog(Popup):
-    def do_search(self, query):
-        self.ids.search_results.text = f"Результаты поиска по запросу '{query}':\n\n(функция поиска в разработке)"
 
 class MainPanel(BoxLayout):
     vault_dir = 'my_vault'
@@ -32,7 +29,7 @@ class MainPanel(BoxLayout):
         self.file_chooser._update_files()
 
     def show_search_dialog(self):
-        dialog = SearchDialog()
+        dialog = Dialogs.SearchDialog()
         dialog.open()
 
     def load_note(self, selection):
@@ -60,13 +57,13 @@ class MainPanel(BoxLayout):
 
             try:
                 with open(new_note_path, 'w', encoding='utf-8') as f:
-                    f.write(f'# {os.path.splitext(filename)[0]}\n\nStart writing here...')
+                    f.write(f'# {os.path.splitext(filename)[0]}')
                 self.file_chooser._update_files()
                 self.load_note([new_note_path])
             except Exception as e:
                 print(f"Error creating note: {e}")
 
-        dialog = InputDialog.InputDialog(
+        dialog = Dialogs.InputDialog(
             title="Новая заметка",
             hint_text="Введите название заметки (без .md)",
             callback=create_note
@@ -84,7 +81,7 @@ class MainPanel(BoxLayout):
             except Exception as e:
                 print(f"Error creating folder: {e}")
 
-        dialog = InputDialog.InputDialog(
+        dialog = Dialogs.InputDialog(
             title="Новая папка",
             hint_text="Введите название папки",
             callback=create_folder
@@ -92,11 +89,12 @@ class MainPanel(BoxLayout):
         dialog.open()
 
 
-class SmartNotes(App):
+class SmartNote(App):
     def build(self):
         Window.size = (1200, 800)
+        Window.clearcolor = (1, 1, 1, 1)  # RGBA значения (от 0 до 1)
         return MainPanel()
 
 
 if __name__ == '__main__':
-    SmartNotes().run()
+    SmartNote().run()

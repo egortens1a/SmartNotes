@@ -129,22 +129,40 @@
         size_hint_x: 0.2
         orientation: 'vertical'
         Button:
+            text: 'Поиск'
+            size_hint_y: 0.1
+            on_press: root.show_search_dialog()
+
+        Button:
             text: 'Новая заметка'
             size_hint_y: 0.1
             on_press: root.show_new_note_dialog()
+            background_color: (198/256, 177/256, 214/256, 1)
+            canvas.before:
+                Color:
+                    rgba: 1, 1, 1, 1
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+
         Button:
             text: 'Новая папка'
             size_hint_y: 0.1
             on_press: root.show_new_folder_dialog()
-        Button:
-            text: 'Поиск'
-            size_hint_y: 0.1
-            on_press: root.show_search_dialog()
+            background_color: 221/256, 188/256, 201/256, 1
+
+
         FileChooserListView:
             id: file_chooser
             size_hint_y: 0.7
             filters: ['*.md']
             on_selection: root.load_note(file_chooser.selection)
+            canvas.before:
+                Color:
+                    rgba: 198/256/2, 177/256/2, 214/256/2, 1
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
     NoteEditor:
         id: note_editor
         size_hint_x: 0.8
