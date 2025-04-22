@@ -7,12 +7,12 @@ from kivy.lang import Builder
 import time
 import os
 
-from kivy.uix.popup import Popup
-
 import NoteEditor
 import Dialogs
 
-
+"""
+    Загрузка верстки
+"""
 Builder.load_file("SmartNotes.kv")
 
 
@@ -22,6 +22,11 @@ class MainPanel(BoxLayout):
     note_editor = ObjectProperty(None)
 
     def __init__(self, **kwargs):
+        """
+        Инициализация приложения.
+        Создаем папку "my_vault" если ее нет
+        :param kwargs: просто перекидывание именных аргументов в старший класс
+        """
         super().__init__(**kwargs)
         if not os.path.exists(self.vault_dir):
             os.makedirs(self.vault_dir)
@@ -29,10 +34,25 @@ class MainPanel(BoxLayout):
         self.file_chooser._update_files()
 
     def show_search_dialog(self):
-        dialog = Dialogs.SearchDialog()
+        """Вывод окна поиска"""
+        def on_file_selected(filepath):
+            self.load_note([filepath])
+            self.file_chooser.path = os.path.dirname(filepath)
+            self.file_chooser._update_files()
+            self.file_chooser.selection = [filepath]
+
+        dialog = Dialogs.SearchDialog(
+            vault_dir=self.vault_dir,
+            on_file_select_callback=on_file_selected
+        )
         dialog.open()
 
     def load_note(self, selection):
+        """
+        Вывод файла с записью
+        :param selection:
+        :return:
+        """
         if selection:
             self.note_editor.current_file = selection[0]
             try:
@@ -43,7 +63,16 @@ class MainPanel(BoxLayout):
                 print(f"Error loading note: {e}")
 
     def show_new_note_dialog(self):
+        """
+        Окно создания нового файла, открытие этого окна
+        :return:
+        """
         def create_note(filename):
+            """
+            Создание самого файла
+            :param filename: str; название файла
+            :return:
+            """
             if not filename:
                 return
             if not filename.endswith('.md'):
@@ -71,7 +100,16 @@ class MainPanel(BoxLayout):
         dialog.open()
 
     def show_new_folder_dialog(self):
+        """
+        Создание новой папки (открытие окна)
+        :return:
+        """
         def create_folder(foldername):
+            """
+            Создание новой папки
+            :param foldername: название папки
+            :return:
+            """
             if not foldername:
                 return
             new_folder_path = os.path.join(self.file_chooser.path, foldername)

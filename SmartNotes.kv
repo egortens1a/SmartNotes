@@ -91,34 +91,73 @@
             on_press: root.save_note()
             background_color: (0.2, 0.6, 0.2, 1)
 
+<ClickableLabel>:
+    background_color: (0.95, 0.95, 0.95, 1) if self.state == 'normal' else (0.85, 0.85, 0.85, 1)
+    canvas.before:
+        Color:
+            rgba: self.background_color
+        Rectangle:
+            pos: self.pos
+            size: self.size
+        Color:
+            rgba: 0.8, 0.8, 0.8, 1
+        Line:
+            points: self.x, self.y, self.x + self.width, self.y
+            width: 1
+
 <SearchDialog>:
-    size_hint: (0.8, 0.6)
+    size_hint: (0.9, 0.8)
     title: 'Поиск заметок'
+    title_size: dp(20)
+    title_align: 'center'
+    separator_color: [0.8, 0.8, 0.8, 1]
+
     BoxLayout:
         orientation: 'vertical'
-        padding: 10
-        spacing: 10
+        padding: dp(10)
+        spacing: dp(10)
+
         TextInput:
             id: search_input
-            hint_text: 'Введите ключевые слова для поиска'
-            size_hint_y: 0.2
+            hint_text: 'Что ищем?..'
+            size_hint_y: None
+            height: dp(50)
+            font_size: dp(16)
+            multiline: False
+            background_color: (0.98, 0.98, 0.98, 1)
+            foreground_color: (0.2, 0.2, 0.2, 1)
+            cursor_color: (0.4, 0.4, 0.4, 1)
+            on_text_validate: root.do_search(search_input.text)
+
+        Button:
+            text: 'Найти'
+            size_hint_y: None
+            height: dp(45)
+            background_color: (0.35, 0.55, 0.85, 1)
+            background_normal: ''
+            font_size: dp(16)
+            on_press: root.do_search(search_input.text)
+
         ScrollView:
-            size_hint_y: 0.6
-            Label:
-                id: search_results
-                text: ''
+            id: scroll_view
+            size_hint_y: 1
+
+            BoxLayout:
+                id: results_container
+                orientation: 'vertical'
                 size_hint_y: None
-                height: self.texture_size[1]
-                text_size: self.width, None
-        BoxLayout:
-            size_hint_y: 0.2
-            spacing: 10
-            Button:
-                text: 'Отмена'
-                on_press: root.dismiss()
-            Button:
-                text: 'Поиск'
-                on_press: root.do_search(search_input.text)
+                height: self.minimum_height
+                spacing: dp(5)
+                padding: dp(5)
+
+        Button:
+            text: 'Закрыть'
+            size_hint_y: None
+            height: dp(45)
+            background_color: (0.9, 0.9, 0.9, 1)
+            background_normal: ''
+            font_size: dp(16)
+            on_press: root.dismiss()
 
 <MainPanel>:
     file_chooser: file_chooser

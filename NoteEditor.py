@@ -13,30 +13,50 @@ class NoteEditor(BoxLayout):
     edit_mode = BooleanProperty(True)
 
     def toggle_mode(self):
+        """
+        Переключатель режимов (редактирование/просмотр)
+        :return: None
+        """
         self.edit_mode = not self.edit_mode
         self.update_preview(force=True)
         self.ids.editor.height = max(self.ids.editor.minimum_height, self.height * 0.7) if self.edit_mode else 0
         self.ids.preview.height = max(self.ids.preview.texture_size[1], self.height * 0.7) if not self.edit_mode else 0
 
     def show_brush_menu(self):
+        """
+        открывает окно с кистями
+        :return: ?
+        """
         popup = Popup(title="Инструменты рисования",
                       size_hint=(0.4, 0.4))
         popup.content = Label(text="Инструменты рисования в разработке")
         popup.open()
 
     def summarize(self):
+        """
+        Выводит суммированный текст
+        :return:
+        """
         popup = Popup(title="Суммаризация текста",
                       size_hint=(0.6, 0.6))
         popup.content = Label(text="Суммаризация текста в разработке")
         popup.open()
 
     def extract_keywords(self):
+        """
+        выделение ключевых слов
+        :return:
+        """
         popup = Popup(title="Ключевые слова",
                       size_hint=(0.5, 0.5))
         popup.content = Label(text="Извлечение ключевых слов в разработке")
         popup.open()
 
     def save_note(self):
+        """
+        Сохранение записи
+        :return: None
+        """
         if self.current_file:
             with open(self.current_file, 'w', encoding='utf-8') as f:
                 f.write(self.note_content)
@@ -46,6 +66,11 @@ class NoteEditor(BoxLayout):
             popup.open()
 
     def update_preview(self, force=False):
+        """
+        Обработка текста для красивого отображения
+        :param force:
+        :return: None
+        """
         if not self.edit_mode or force:
             markdown_text = self.ids.editor.text
             html = markdown2.markdown(markdown_text)
