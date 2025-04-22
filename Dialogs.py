@@ -38,7 +38,7 @@ class ClickableLabel(ButtonBehavior, Label):
         self.font_size = '16sp'  # Базовый размер шрифта
         self.halign = 'left'  # Выравнивание по левому краю
         self.valign = 'top'  # Выравнивание по верхнему краю
-        self.padding = [20, 15]  # Стандартные отступы
+        self.padding = [20, 15]  # Стандартные отстуы
 
         # Создаем элементы canvas
         with self.canvas.before:
