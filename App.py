@@ -10,12 +10,6 @@ import os
 import NoteEditor
 import Dialogs
 
-"""
-    Загрузка верстки
-"""
-Builder.load_file("SmartNotes.kv")
-
-
 class MainPanel(BoxLayout):
     vault_dir = 'my_vault'
     file_chooser = ObjectProperty(None)
@@ -63,16 +57,7 @@ class MainPanel(BoxLayout):
                 print(f"Error loading note: {e}")
 
     def show_new_note_dialog(self):
-        """
-        Окно создания нового файла, открытие этого окна
-        :return:
-        """
         def create_note(filename):
-            """
-            Создание самого файла
-            :param filename: str; название файла
-            :return:
-            """
             if not filename:
                 return
             if not filename.endswith('.md'):
@@ -125,6 +110,12 @@ class MainPanel(BoxLayout):
             callback=create_folder
         )
         dialog.open()
+
+
+"""
+    Загрузка верстки
+"""
+Builder.load_file("SmartNotes.kv")
 
 
 class SmartNote(App):

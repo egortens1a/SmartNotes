@@ -59,7 +59,7 @@ class NoteEditor(BoxLayout):
         """
         if self.current_file:
             with open(self.current_file, 'w', encoding='utf-8') as f:
-                f.write(self.note_content)
+                f.write(self.ids.editor.text)
             popup = Popup(title="Сохранено",
                           size_hint=(0.3, 0.2))
             popup.content = Label(text="Файл успешно сохранен")

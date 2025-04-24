@@ -8,10 +8,14 @@ from kivy.uix.behaviors import ButtonBehavior
 from kivy.uix.label import Label
 
 
-class InputDialog(Popup):
-    """
-    Создание файла
-    """
+class BaseDialog(Popup):
+    """Базовый класс для всех диалогов"""
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.background = ''
+        self.separator_color = [179/256, 179/256, 179/256, 1]
+
+class InputDialog(BaseDialog):
     def __init__(self, title, hint_text, callback, **kwargs):
         super().__init__(**kwargs)
         self.title = title
@@ -20,50 +24,40 @@ class InputDialog(Popup):
 
     def on_ok(self):
         self.callback(self.ids.input.text)
-        self.dismiss()
 
 
 class ClickableLabel(ButtonBehavior, Label):
-    """Лейбл с возможностью клика и красивым оформлением"""
-
-    """Лейбл с возможностью клика и улучшенным отображением текста"""
-
     def __init__(self, **kwargs):
-        self.background_color = kwargs.pop('background_color', [0.95, 0.95, 0.95, 1])
+        self.background_color = kwargs.pop('background_color', [0.96, 0.96, 0.96, 1])  # Очень светлый серый
         super().__init__(**kwargs)
 
         # Настройки внешнего вида
-        self.background_normal = ''
-        self.background_color = [0.85, 0.85, 0.85, 1]
-        self.font_size = '16sp'  # Базовый размер шрифта
-        self.halign = 'left'  # Выравнивание по левому краю
-        self.valign = 'top'  # Выравнивание по верхнему краю
-        self.padding = [20, 15]  # Стандартные отстуы
+        self.background_down = [0.9, 0.9, 0.9, 1]  # Темнее при нажатии
+        self.font_size = '25sp'
+        self.halign = 'left'
+        self.valign = 'top'
+        self.padding = [20, 15]
 
-        # Создаем элементы canvas
         with self.canvas.before:
             self.bg_color = Color(*self.background_color)
             self.bg_rect = Rectangle(pos=self.pos, size=self.size)
-            self.border_color = Color(0.8, 0.8, 0.8, 1)
-            self.border_rect = Rectangle(pos=self.pos, size=(self.width, 1))
+            self.border_color = Color(179 / 256, 179 / 256, 179 / 256, 1)  # Серый бордюр
+            self.border_rect = Rectangle(pos=[self.x, self.y], size=[self.width, 1])
 
         self.bind(
             pos=self._update_graphics,
             size=self._update_graphics,
-            width=lambda *x: setattr(self, 'text_size', (self.width, None))
-        )
+            width=lambda *x: setattr(self, 'text_size', (self.width, None)))
 
     def _update_graphics(self, *args):
-        """Обновляем графические элементы при изменении размера/позиции"""
         self.bg_rect.pos = self.pos
         self.bg_rect.size = self.size
-        self.border_rect.pos = self.pos
-        self.border_rect.size = (self.width, 1)
+        self.border_rect.pos = [self.x, self.y]
+        self.border_rect.size = [self.width, 1]
 
     def on_state(self, instance, value):
-        """Изменяем цвет фона при нажатии"""
         if value == 'down':
-            self.bg_color.rgba = self.background_color
+            self.bg_color.rgba = self.background_down
         else:
             self.bg_color.rgba = self.background_color
 

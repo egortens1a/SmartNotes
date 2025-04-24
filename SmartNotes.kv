@@ -1,23 +1,77 @@
-<InputDialog>:
-    size_hint: (0.8, 0.4)
-    title: ''
+# Базовый стиль для всех Popup окон
+<BaseDialog>:
+    title_color: [0, 0, 0, 1]
+    title_size: dp(20)
+    title_align: 'center'
+    title_color: [0, 0, 0, 1]
+    background: ''  # Убираем стандартный фон
+    canvas.before:
+        Color:
+            rgba: 217/256, 217/256, 217/256, 1  # Светло-серый фон
+        Rectangle:
+            pos: self.pos
+            size: self.size
+        Color:
+            rgba: 179/256, 179/256, 179/256, 1  # Серый бордюр
+        Line:
+            width: 1
+            rectangle: [self.x, self.y, self.width, self.height]
+
+<InputDialog@BaseDialog>:
+    size_hint: (0.4, 0.4)
     BoxLayout:
         orientation: 'vertical'
-        padding: 10
-        spacing: 10
+        padding: dp(20)
+        spacing: dp(15)
+
+        Label:
+            size_hint_y: None
+            height: dp(30)
+            font_size: dp(18)
+            color: 0.2, 0.2, 0.2, 1
+            bold: True
+
         TextInput:
+            multiline: False
             id: input
-            hint_text: ''
+            hint_text: root.ids.input.hint_text
             size_hint_y: 0.6
+            font_size: dp(16)
+            background_color: 1, 1, 1, 1
+            foreground_color: 0.2, 0.2, 0.2, 1
+            cursor_color: 0.4, 0.4, 0.4, 1
+            padding: dp(10)
+            on_text_validate:
+                root.on_ok()
+                root.dismiss()
+
         BoxLayout:
-            size_hint_y: 0.4
-            spacing: 10
+            size_hint_y: 0.2
+            spacing: dp(10)
+
             Button:
-                text: 'Cancel'
+                text: 'Отмена'
+                background_color: 179/256, 179/256, 179/256, 1
+                background_normal: ''
+                font_size: dp(16)
                 on_press: root.dismiss()
+
             Button:
-                text: 'OK'
-                on_press: root.on_ok()
+                text: 'Создать'
+                background_color: 198/256, 177/256, 214/256, 1
+                background_normal: ''
+                font_size: dp(16)
+                on_press:
+                    root.on_ok()
+                    root.dismiss()
+
+<NewNoteDialog@InputDialog>:
+    size_hint: (0.4, 0.2)
+    hint_text: "Введите название заметки (без .md)"
+
+<NewFolderDialog@InputDialog>:
+    size_hint: (0.4, 0.2)
+    hint_text: "Введите название папки"
 
 <NoteEditor>:
     orientation: 'vertical'
@@ -81,11 +135,6 @@
             on_press: root.summarize()
 
         Button:
-            text: '+Ключевые слова'
-            size_hint_x: 0.2
-            on_press: root.extract_keywords()
-
-        Button:
             text: 'Сохранить'
             size_hint_x: 0.15
             on_press: root.save_note()
@@ -105,12 +154,21 @@
             points: self.x, self.y, self.x + self.width, self.y
             width: 1
 
-<SearchDialog>:
-    size_hint: (0.9, 0.8)
+<SearchDialog@BaseDialog>:
+    size_hint: (0.5, 0.8)
     title: 'Поиск заметок'
     title_size: dp(20)
     title_align: 'center'
-    separator_color: [0.8, 0.8, 0.8, 1]
+    title_color: [0, 0, 0, 1]
+    separator_color: [0.7, 0.7, 0.7, 1]  # Серый разделитель
+    background: 'lightgray_bg.png'  # Или через canvas
+
+    canvas.before:
+        Color:
+            rgba: 217/256, 217/256, 217/256, 1  # Светло-серый фон
+        Rectangle:
+            pos: self.pos
+            size: self.size
 
     BoxLayout:
         orientation: 'vertical'
@@ -124,16 +182,16 @@
             height: dp(50)
             font_size: dp(16)
             multiline: False
-            background_color: (0.98, 0.98, 0.98, 1)
-            foreground_color: (0.2, 0.2, 0.2, 1)
-            cursor_color: (0.4, 0.4, 0.4, 1)
+            background_color: 1, 1, 1, 1  # Белый фон поля ввода
+            foreground_color: 0.2, 0.2, 0.2, 1
+            cursor_color: 0.4, 0.4, 0.4, 1
             on_text_validate: root.do_search(search_input.text)
 
         Button:
             text: 'Найти'
             size_hint_y: None
             height: dp(45)
-            background_color: (0.35, 0.55, 0.85, 1)
+            background_color: 198/256, 177/256, 214/256, 1  # Фиолетовый
             background_normal: ''
             font_size: dp(16)
             on_press: root.do_search(search_input.text)
@@ -141,6 +199,8 @@
         ScrollView:
             id: scroll_view
             size_hint_y: 1
+            bar_color: 0.7, 0.7, 0.7, 1  # Серый скроллбар
+            bar_width: dp(10)
 
             BoxLayout:
                 id: results_container
@@ -154,7 +214,7 @@
             text: 'Закрыть'
             size_hint_y: None
             height: dp(45)
-            background_color: (0.9, 0.9, 0.9, 1)
+            background_color: 179/256, 179/256, 179/256, 1  # Серый
             background_normal: ''
             font_size: dp(16)
             on_press: root.dismiss()
