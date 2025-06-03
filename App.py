@@ -1,3 +1,6 @@
+from kivy.config import Config
+Config.set('input', 'mouse', 'mouse,disable_multitouch')
+import json
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
 from kivy.properties import ObjectProperty
@@ -7,7 +10,7 @@ from kivy.lang import Builder
 import time
 import os
 
-import NoteEditor
+import NoteEditor # он нужен, хоть и неявно
 import Dialogs
 
 class MainPanel(BoxLayout):
@@ -16,15 +19,12 @@ class MainPanel(BoxLayout):
     note_editor = ObjectProperty(None)
 
     def __init__(self, **kwargs):
-        """
-        Инициализация приложения.
-        Создаем папку "my_vault" если ее нет
-        :param kwargs: просто перекидывание именных аргументов в старший класс
-        """
         super().__init__(**kwargs)
         if not os.path.exists(self.vault_dir):
             os.makedirs(self.vault_dir)
         self.file_chooser.path = self.vault_dir
+        # Разрешаем отображать .json
+        self.file_chooser.filters = ['*.json']
         self.file_chooser._update_files()
 
     def show_search_dialog(self):
@@ -41,45 +41,94 @@ class MainPanel(BoxLayout):
         )
         dialog.open()
 
+    def update_file_list(self):
+        """
+        Обновляет список файлов с учетом дубликатов
+        """
+        # Получаем текущий путь
+        current_path = self.file_chooser.path
+
+        # Собираем все файлы
+        all_files = []
+        for root, dirs, files in os.walk(current_path):
+            for f in files:
+                if f.endswith(('.json')):
+                    all_files.append(os.path.join(root, f))
+
+        self.file_chooser.path = ''
+        self.file_chooser.path = current_path
+
     def load_note(self, selection):
-        """
-        Вывод файла с записью
-        :param selection:
-        :return:
-        """
-        if selection:
-            self.note_editor.current_file = selection[0]
-            try:
-                with open(selection[0], 'r', encoding='utf-8') as f:
-                    self.note_editor.note_content = f.read()
-                self.note_editor.update_preview(force=True)
-            except Exception as e:
-                print(f"Error loading note: {e}")
+        if not selection:
+            self.note_editor.clear_editor()
+            return
+
+        filepath = selection[0]
+        self.note_editor.current_file = filepath
+        self.note_editor.drawing_data = []
+
+        try:
+            with open(filepath, 'r', encoding='utf-8-sig') as f:
+                if filepath.endswith('.json'):
+                    try:
+                        data = json.load(f)
+                        if isinstance(data, dict) and 'text' in data:
+                            self.note_editor.ids.editor.text = data['text']
+                            if 'drawings' in data:
+                                for drawing in data['drawings']:
+                                    if 'is_new' not in drawing:
+                                        drawing['is_new'] = True
+                                    self.note_editor.drawing_data.append(drawing)
+                    except Exception as e:
+                        print(f"Invalid JSON: {e}")
+                else:
+                    self.note_editor.ids.editor.text = f.read()
+
+            self.note_editor.update_preview(force=True)
+        except Exception as e:
+            print(f"Load error: {e}")
 
     def show_new_note_dialog(self):
         def create_note(filename):
             if not filename:
                 return
-            if not filename.endswith('.md'):
-                filename += '.md'
+
+            self.note_editor.current_file = ''
+            self.note_editor.ids.editor.text = ""
+            self.note_editor.drawing_data = []
+
+            if not filename.lower().endswith('.json'):
+                filename += '.json'
+
             new_note_path = os.path.join(self.file_chooser.path, filename)
 
+            # Обработка существующих файлов
             if os.path.exists(new_note_path):
                 base, ext = os.path.splitext(filename)
-                timestamp = str(int(time.time()))
-                new_note_path = os.path.join(self.file_chooser.path, f"{base}_{timestamp}{ext}")
+                new_note_path = os.path.join(
+                    self.file_chooser.path,
+                    f"{base}_{int(time.time())}{ext}"
+                )
 
             try:
+                note_data = {
+                    "version": 1.3,
+                    "text": f"# {os.path.splitext(filename)[0]}\n\n",
+                    "drawings": []
+                }
+
                 with open(new_note_path, 'w', encoding='utf-8') as f:
-                    f.write(f'# {os.path.splitext(filename)[0]}')
-                self.file_chooser._update_files()
+                    json.dump(note_data, f, indent=2)
+
+                self.update_file_list()
                 self.load_note([new_note_path])
             except Exception as e:
-                print(f"Error creating note: {e}")
+                print(f"Ошибка создания: {e}")
+                self.show_popup("Ошибка", f"Не удалось создать заметку: {str(e)}")
 
         dialog = Dialogs.InputDialog(
             title="Новая заметка",
-            hint_text="Введите название заметки (без .md)",
+            hint_text="Введите название (можно без .json)",
             callback=create_note
         )
         dialog.open()
@@ -93,7 +142,7 @@ class MainPanel(BoxLayout):
             """
             Создание новой папки
             :param foldername: название папки
-            :return:
+            :return: None
             """
             if not foldername:
                 return

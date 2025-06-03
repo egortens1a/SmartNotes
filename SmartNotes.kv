@@ -12,7 +12,7 @@
             pos: self.pos
             size: self.size
         Color:
-            rgba: 179/256, 179/256, 179/256, 1  # Серый бордюр
+            rgba: 179/256, 179/256, 179/256, 1  # Серый
         Line:
             width: 1
             rectangle: [self.x, self.y, self.width, self.height]
@@ -75,11 +75,9 @@
 
 <NoteEditor>:
     orientation: 'vertical'
-    spacing: 5
-
     ScrollView:
         id: main_scroll
-        scroll_y: 1
+        do_scroll: not root.drawing_active
 
         BoxLayout:
             orientation: 'vertical'
@@ -100,6 +98,7 @@
                 on_text: root.update_preview()
                 opacity: 1 if root.edit_mode else 0
                 disabled: not root.edit_mode
+                canvas.after:
 
             Label:
                 id: preview
@@ -113,6 +112,14 @@
                 valign: 'top'
                 opacity: 0 if root.edit_mode else 1
                 disabled: root.edit_mode
+                canvas.after:
+                    Color:
+                        rgba: root.brush_color
+                    Line:
+                        points: [] if not root.drawing_data else [p for line in root.drawing_data for p in line['points']]
+                        width: root.brush_width
+                        cap: 'round'
+                        joint: 'round'
 
     BoxLayout:
         size_hint_y: 0.1
@@ -125,9 +132,12 @@
             size_hint_x: 0.2
 
         Button:
-            text: 'Кисти'
-            size_hint_x: 0.15
-            on_press: root.show_brush_menu()
+            id: exit_drawing_btn
+            text: 'Рисование: ВКЛ' if root.drawing_active and not root.edit_mode else 'Рисование: ВЫКЛ' if not root.drawing_active and not root.edit_mode else 'Рисовать можно в режиме просмотр'
+            size_hint_x: 0.25
+            on_press: root.toggle_drawing_mode()
+            background_color: (0.9, 0.9, 0.9, 1) if not root.drawing_active else (0.8, 0.6, 0.8, 1)
+            disabled: False
 
         Button:
             text: 'Суммаризация'
@@ -161,7 +171,7 @@
     title_align: 'center'
     title_color: [0, 0, 0, 1]
     separator_color: [0.7, 0.7, 0.7, 1]  # Серый разделитель
-    background: 'lightgray_bg.png'  # Или через canvas
+    background: 'lightgray_bg.png'
 
     canvas.before:
         Color:
@@ -219,6 +229,75 @@
             font_size: dp(16)
             on_press: root.dismiss()
 
+<SummaryPopup@BaseDialog>:
+    title: "Суммаризация текста"
+    size_hint: (0.8, 0.8)
+    title_align: 'center'
+    title_size: '20sp'
+    background: ''
+    separator_color: [179/256, 179/256, 179/256, 1]
+
+    canvas.before:
+        # Белый фон как в InputDialog
+        Color:
+            rgba: 1, 1, 1, 1
+        Rectangle:
+            pos: self.pos
+            size: self.size
+        Color:
+            rgba: 179/256, 179/256, 179/256, 1
+        Line:
+            width: 1
+            rectangle: [self.x, self.y, self.width, self.height]
+
+    BoxLayout:
+        orientation: 'vertical'
+        padding: dp(20)
+        spacing: dp(15)
+
+        Label:
+            size_hint_y: None
+            height: dp(30)
+            font_size: '18sp'
+            bold: True
+            color: 0.2, 0.2, 0.2, 1
+            halign: 'left'
+
+        ScrollView:
+            bar_width: dp(10)
+            bar_color: 0.7, 0.7, 0.7, 1
+            bar_inactive_color: 0.7, 0.7, 0.7, 0.5
+
+            Label:
+                id: summary_text
+                size_hint_y: None
+                height: self.texture_size[1]
+                text_size: self.width, None
+                halign: 'left'
+                valign: 'top'
+                markup: True
+                font_size: '20sp'
+                color: 0.2, 0.2, 0.2, 1
+                padding: dp(10), dp(10)
+
+        BoxLayout:
+            size_hint_y: None
+            height: dp(50)
+            spacing: dp(10)
+
+            Button:
+                text: 'Закрыть'
+                background_color: 179/256, 179/256, 179/256, 1
+                background_normal: ''
+                font_size: '16sp'
+                on_press: root.dismiss()
+<LoadingLabel@Label>:
+    font_size: '18sp'
+    color: 0.2, 0.2, 0.2, 1
+    halign: 'center'
+    valign: 'top'
+
+
 <MainPanel>:
     file_chooser: file_chooser
     note_editor: note_editor
@@ -254,7 +333,7 @@
         FileChooserListView:
             id: file_chooser
             size_hint_y: 0.7
-            filters: ['*.md']
+            filters: ['*.json']  # Показывать оба типа
             on_selection: root.load_note(file_chooser.selection)
             canvas.before:
                 Color:
@@ -265,3 +344,257 @@
     NoteEditor:
         id: note_editor
         size_hint_x: 0.8
+
+<ThicknessPreview@BoxLayout>:
+    size_hint: (None, None)
+    size: dp(150), dp(30)
+
+    Label:
+        size_hint_x: 0.6
+        halign: 'left'
+        valign: 'middle'
+
+    BoxLayout:
+        id: line_preview
+        size_hint_x: 0.6
+        canvas.after:
+            Color:
+                rgba: app.root.note_editor.brush_color  # Учитывает цвет, яркость И прозрачность
+            Line:
+                points: [self.x, self.center_y, self.right, self.center_y]
+                width: app.root.note_editor.brush_width
+                cap: 'round'
+
+<BrushSettingsPopup@Popup>:
+    size_hint: (None, None)
+    size: dp(350), dp(550)
+    title: 'Настройки кисти'
+
+    BoxLayout:
+        orientation: 'vertical'
+        padding: dp(15)
+        spacing: dp(10)
+
+         # Превью толщины (только линия)
+        ThicknessPreview:
+            id: thickness_preview
+            size_hint_y: None
+            height: dp(30)
+
+        # Ползунок яркости
+        BoxLayout:
+            size_hint_y: 0.1
+
+            height: dp(50)
+            spacing: dp(10)
+
+            Label:
+                text: 'Яркость:'
+                size_hint_x: 0.3
+                font_size: dp(10)
+
+            Slider:
+                id: brightness_slider
+                cursor_size: (dp(15), dp(15))
+                min: 0.1
+                max: 2.0
+                step: 0.1
+                value: 1.0
+                on_value:
+                    app.root.note_editor.set_brightness(self.value)
+                    app.root.note_editor.set_alpha(self.value)  # Мгновенное обновление
+
+        # Ползунки RGB
+        BoxLayout:
+            size_hint_y: 0.1
+            height: dp(50)
+            spacing: dp(10)
+
+            Label:
+                text: 'R:'
+                size_hint_x: 0.3
+                font_size: dp(16)
+                color: 1, 0, 0, 1
+
+            Slider:
+                id: red_slider
+                cursor_size: (dp(15), dp(15))
+                min: 0
+                max: 1
+                step: 0.01
+                value: 0
+                on_value: app.root.note_editor.set_rgb(self.value, app.root.note_editor.get_rgb()[1], app.root.note_editor.get_rgb()[2])
+
+        BoxLayout:
+            size_hint_y: 0.1
+            height: dp(50)
+            spacing: dp(10)
+
+            Label:
+                text: 'G:'
+                size_hint_x: 0.3
+                font_size: dp(16)
+                color: 0, 1, 0, 1
+
+            Slider:
+                id: green_slider
+                cursor_size: (dp(15), dp(15))
+                min: 0
+                max: 1
+                step: 0.01
+                value: 0
+                on_value: app.root.note_editor.set_rgb(app.root.note_editor.get_rgb()[0], self.value, app.root.note_editor.get_rgb()[2])
+
+        BoxLayout:
+            size_hint_y: 0.1
+            height: dp(50)
+            spacing: dp(10)
+
+            Label:
+                text: 'B:'
+                size_hint_x: 0.3
+                font_size: dp(16)
+                color: 0, 0, 1, 1
+
+            Slider:
+                id: blue_slider
+                cursor_size: (dp(15), dp(15))
+                min: 0
+                max: 1
+                step: 0.01
+                value: 0
+                on_value: app.root.note_editor.set_rgb(app.root.note_editor.get_rgb()[0], app.root.note_editor.get_rgb()[1], self.value)
+
+        # Ползунок прозрачности
+        BoxLayout:
+            size_hint_y: 0.1
+            height: dp(50)
+            spacing: dp(10)
+
+            Label:
+                text: 'Прозрачность:'
+                size_hint_x: 0.3
+                font_size: dp(10)
+
+            Slider:
+                id: alpha_slider
+                cursor_size: (dp(15), dp(15))
+                min: 0.1
+                max: 1
+                step: 0.05
+                value: 1
+                on_value:
+                    app.root.note_editor.brush_color[3] = self.value
+                    app.root.note_editor.update_canvas()
+        BoxLayout:
+            size_hint_y: 0.1
+            height: dp(50)
+            spacing: dp(10)
+
+            Label:
+                text: 'Толщина:'
+                size_hint_x: 0.3
+                font_size: dp(10)
+
+            Slider:
+                id: width_slider
+                cursor_size: (dp(15), dp(15))
+                min: 1
+                max: 30  # Максимальная толщина
+                step: 1
+                value: app.root.note_editor.brush_width
+                on_value: app.root.note_editor.set_brush_width(self.value)
+
+        # Кнопки базовых цветов
+        GridLayout:
+            cols: 4
+            spacing: dp(5)
+            size_hint_y: None
+            height: dp(120)
+
+            Button:
+
+                background_color: 1, 0, 0, 1
+                on_press: app.root.note_editor.apply_color(1, 0, 0)
+
+            Button:
+
+                background_color: 0, 1, 0, 1
+                on_press: app.root.note_editor.apply_color(0, 1, 0)
+
+            Button:
+
+                background_color: 0, 0, 1, 1
+                on_press: app.root.note_editor.apply_color(0, 0, 1)
+
+            Button:
+
+                background_color: 1, 1, 1, 1
+                color: 0, 0, 0, 1
+                on_press: app.root.note_editor.apply_color(1, 1, 1)
+
+            Button:
+
+                background_color: 0, 0, 0, 1
+                on_press: app.root.note_editor.apply_color(0, 0, 0)
+
+            Button:
+
+                background_color: 1, 1, 0, 1
+                on_press: app.root.note_editor.apply_color(1, 1, 0)
+            Button:
+
+                background_color: 1, 0.71, 0.76, 1  # Пастельно-розовый
+                on_press: app.root.note_editor.apply_color(1, 0.71, 0.76)
+
+            Button:
+
+                background_color: 0.6, 0.98, 0.6, 1  # Светло-мятный
+                on_press: app.root.note_editor.apply_color(0.6, 0.98, 0.6)
+
+            Button:
+
+                background_color: 0.77, 0.63, 0.87, 1  # Лавандовый
+                on_press: app.root.note_editor.apply_color(0.77, 0.63, 0.87)
+
+            Button:
+
+                background_color: 1, 0.85, 0.73, 1  # Персиковый
+                on_press: app.root.note_editor.apply_color(1, 0.85, 0.73)
+
+            Button:
+
+                background_color: 0.68, 0.85, 0.9, 1  # Светло-голубой
+                on_press: app.root.note_editor.apply_color(0.68, 0.85, 0.9)
+
+            Button:
+
+                background_color: 0.96, 0.87, 0.7, 1  # Теплый бежевый
+                on_press: app.root.note_editor.apply_color(0.96, 0.87, 0.7)
+
+            # Популярные цвета (4 шт)
+            Button:
+
+                background_color: 0.25, 0.88, 0.82, 1  # Яркая бирюза
+                on_press: app.root.note_editor.apply_color(0.25, 0.88, 0.82)
+
+            Button:
+
+                background_color: 0.78, 0.08, 0.52, 1  # Глубокий пурпурный
+                on_press: app.root.note_editor.apply_color(0.78, 0.08, 0.52)
+
+            Button:
+
+                background_color: 1, 0.65, 0, 1  # Ярко-оранжевый
+                on_press: app.root.note_editor.apply_color(1, 0.65, 0)
+
+            Button:
+
+                background_color: 0.5, 0.5, 0.5, 1  # Нейтральный серый
+                on_press: app.root.note_editor.apply_color(0.5, 0.5, 0.5)
+
+        Button:
+            text: 'Закрыть'
+            size_hint_y: None
+            height: dp(40)
+            on_press: root.dismiss()

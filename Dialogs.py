@@ -1,3 +1,5 @@
+import json
+
 from kivy.graphics import Rectangle, Color
 from kivy.uix.popup import Popup
 import os
@@ -9,13 +11,24 @@ from kivy.uix.label import Label
 
 
 class BaseDialog(Popup):
-    """Базовый класс для всех диалогов"""
+    """
+    Базовый класс для всех диалогов
+    """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.background = ''
         self.separator_color = [179/256, 179/256, 179/256, 1]
 
+class SummaryPopup(BaseDialog):
+    """
+    Класс диалога для окна с текстом суммаризации
+    """
+    pass
+
 class InputDialog(BaseDialog):
+    """
+    Класс диалогов для создания файлов/папок
+    """
     def __init__(self, title, hint_text, callback, **kwargs):
         super().__init__(**kwargs)
         self.title = title
@@ -62,6 +75,9 @@ class ClickableLabel(ButtonBehavior, Label):
             self.bg_color.rgba = self.background_color
 
 class SearchDialog(Popup):
+    """
+    Класс для диалога поиска файлов
+    """
     def __init__(self, vault_dir, on_file_select_callback=None, **kwargs):
         super().__init__(**kwargs)
         self.vault_dir = vault_dir
@@ -86,12 +102,14 @@ class SearchDialog(Popup):
         documents = []
         for root, _, files in os.walk(self.vault_dir):
             for file in files:
-                if file.endswith('.md'):
+                if file.endswith('.json'):
                     filepath = os.path.join(root, file)
                     try:
                         with open(filepath, 'r', encoding='utf-8') as f:
-                            content = f.read()
-                            documents.append((filepath, content))
+                            data = json.load(f)
+                            if 'text' in data:
+                                content = data['text']
+                                documents.append((filepath, content))
                     except Exception as e:
                         print(f"Error reading {filepath}: {e}")
 
@@ -108,7 +126,6 @@ class SearchDialog(Popup):
             self.ids.results_container.add_widget(card)
 
     def _create_result_card(self, filepath, score):
-        """Создает карточку результата поиска с крупным текстом названий"""
         filename = os.path.splitext(os.path.basename(filepath))[0]
         rel_path = os.path.relpath(filepath, self.vault_dir)
 
@@ -133,13 +150,11 @@ class SearchDialog(Popup):
         return card
 
     def _show_empty_state(self, message):
-        """Показывает состояние пустых результатов"""
         self.ids.results_container.clear_widgets()
         self.empty_label.text = message
         self.ids.results_container.add_widget(self.empty_label)
 
     def _on_file_selected(self, instance):
-        """Обработчик выбора файла"""
         if self.on_file_select_callback:
             self.on_file_select_callback(instance.filepath)
         self.dismiss()

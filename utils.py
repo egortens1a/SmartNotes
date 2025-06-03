@@ -1,62 +1,10 @@
 
 import math
 from collections import defaultdict
-import os
 import re
 
-
-def compute_tfidf(target_text, corpus):
-    """
-    Вычисляет TF-IDF для слов в целевом тексте относительно корпуса документов.
-
-    Аргументы:
-    ----------
-    target_text : str
-        Текст, для которого вычисляется TF-IDF (разбивается на слова по пробелам).
-    corpus : list of str
-        Список текстов (каждый текст разбивается на слова по пробелам).
-
-    Возвращает:
-    -----------
-    dict
-        Словарь {слово: tfidf_вес} для слов в `target_text`.
-    """
-
-    # Разбиваем тексты на слова (можно улучшить токенизацию)
-    target_words = target_text.lower().split()
-    corpus_words = [doc.lower().split() for doc in corpus]
-
-    # === 1. Вычисляем TF (Term Frequency) для целевого текста ===
-    tf = defaultdict(float)
-    total_words = len(target_words)
-    for word in target_words:
-        tf[word] += 1.0 / total_words
-
-    # === 2. Вычисляем IDF (Inverse Document Frequency) ===
-    idf = defaultdict(float)
-    total_docs = len(corpus_words) + 1  # +1 чтобы учесть сам target_text
-
-    # Считаем, в скольких документах встречается слово
-    doc_freq = defaultdict(int)
-    # Учитываем слова из корпуса
-    for doc in corpus_words:
-        for word in set(doc):  # set() чтобы учитывать слово только 1 раз в документе
-            doc_freq[word] += 1
-    # Учитываем слова из target_text (как отдельный документ)
-    for word in set(target_words):
-        doc_freq[word] += 1
-
-    # Вычисляем IDF: log(общее_число_документов / число_документов_со_словом)
-    for word, count in doc_freq.items():
-        idf[word] = math.log(total_docs / count)
-
-    # === 3. Вычисляем TF-IDF (только для слов из target_text) ===
-    tfidf = {}
-    for word in set(target_words):  # Убираем дубликаты
-        tfidf[word] = tf[word] * idf.get(word, 0)
-
-    top10 = sorted(tfidf, key=lambda x: tfidf[x])[-10:]
-    return tfidf
+import markdown2
+from bs4 import BeautifulSoup
 
 def preprocess_markdown(text):
     """
@@ -79,10 +27,9 @@ def preprocess_markdown(text):
 
     # Оставляем только буквы, цифры и пробелы
     text = re.sub(r'[^\w\s]', ' ', text)
-    text = re.sub(r'\s+', ' ', text).strip().lower()
+    text = re.sub(r'\s+', ' ', text).strip()
 
     return text
-
 
 def compute_tfidf_for_search(query, documents):
     """
@@ -100,7 +47,6 @@ def compute_tfidf_for_search(query, documents):
     list of tuple
         Отсортированный список (путь к файлу, оценка релевантности) по убыванию.
     """
-    # Обрабатываем запрос
     query_words = preprocess_markdown(query).split()
 
     # Обрабатываем документы
@@ -117,9 +63,8 @@ def compute_tfidf_for_search(query, documents):
 
     # === 2. Вычисляем IDF (Inverse Document Frequency) ===
     idf = defaultdict(float)
-    total_docs = len(processed_docs) + 1  # +1 для самого запроса
+    total_docs = len(processed_docs) + 1
 
-    # Считаем, в скольких документах встречается слово
     doc_freq = defaultdict(int)
 
     # Учитываем слова из документов
@@ -158,3 +103,30 @@ def compute_tfidf_for_search(query, documents):
     results.sort(key=lambda x: -x[1])
 
     return results
+
+def preprocess_to_html(text):
+    '''
+    Конвертирует исходный текст с Markdown-разметкой в html верстку
+    :param text: исходный текст
+    :return: html-верстка
+    '''
+    html = markdown2.markdown(text)
+    soup = BeautifulSoup(html, 'html.parser')
+
+    text = str(soup)
+    text = text.replace('<h1>', '[size=24][b]').replace('</h1>', '[/b][/size]')
+    text = text.replace('<h2>', '[size=20][b]').replace('</h2>', '[/b][/size]')
+    text = text.replace('<h3>', '[size=18][b]').replace('</h3>', '[/b][/size]')
+    text = text.replace('<strong>', '[b]').replace('</strong>', '[/b]')
+    text = text.replace('<em>', '[i]').replace('</em>', '[/i]')
+    text = text.replace('<code>', '[font=RobotoMono-Regular][color=00ff00]').replace('</code>',
+                                                                                     '[/color][/font]')
+    text = text.replace('<pre>', '[font=RobotoMono-Regular]').replace('</pre>', '[/font]')
+    text = text.replace('<li>', '• ').replace('</li>', '')
+    text = text.replace('<ul>', '').replace('</ul>', '')
+    text = text.replace('<ol>', '').replace('</ol>', '')
+    text = text.replace('<p>', '').replace('</p>', '')
+    text = text.replace('<br/>', '')
+
+    text = ''.join(BeautifulSoup(text, 'html.parser').find_all(string=True))
+    return text
