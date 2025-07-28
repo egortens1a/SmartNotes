@@ -2,12 +2,11 @@ import torch
 from transformers import MT5ForConditionalGeneration, MT5Tokenizer
 from threading import Thread
 from queue import Queue
-import time
 
 
 class TextSummarizer:
     def __init__(self, model_path):
-        print(f"[{time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}][Summarizer] Инициализация модели...")
+        print("[Summarizer] Инициализация модели...")
         #0odel_path = r"alan-turing-institute/mt5-small-finetuned-mnli-xtreme-xnli"
         self.model_path = model_path
         self.task_queue = Queue()
@@ -34,9 +33,9 @@ class TextSummarizer:
             self.model = self.model.to(self.device)
             self.ready = True
 
-            print(f"[{time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}][Summarizer] Модель загружена и готова к работе!")
+            print("[Summarizer] Модель загружена и готова к работе!")
         except Exception as e:
-            print(f"[{time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}][Summarizer] Ошибка загрузки модели: {e}")
+            print("[Summarizer] Ошибка загрузки модели: 1")
             self.ready = False
 
     def summarize(self, text):
@@ -44,9 +43,9 @@ class TextSummarizer:
         Публичный метод для запроса суммаризации
         """
         if not self.ready:
-            return f"[{time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}][Ошибка] Модель еще не загружена!"
+            return "[Ошибка] Модель еще не загружена!"
 
-        print(f"[{time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}][Summarizer] Добавление задачи в очередь (длина текста: {len(text)})")
+        print("[Summarizer] Добавление задачи в очередь")
         self.task_queue.put(text)
         return self.result_queue.get()  # Блокируется, пока не получит результат
 
@@ -60,14 +59,14 @@ class TextSummarizer:
                 if text is None:  # Сигнал остановки
                     break
 
-                print(f"[{time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}][Summarizer] Обработка текста длиной {len(text)} символов")
+                print("[Summarizer] Обработка текста длиной символов")
 
                 # Разбивка текста на части (~500 токенов)
                 chunks = self._split_text(text)
                 summaries = []
 
                 for i, chunk in enumerate(chunks):
-                    print(f"[{time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}][Summarizer] Обработка части {i + 1}/{len(chunks)}")
+                    print("[Summarizer] Обработка части")
                     summary = self._summarize_chunk(chunk)
                     summaries.append(summary)
 
@@ -75,7 +74,7 @@ class TextSummarizer:
                 self.result_queue.put(full_summary)
 
             except Exception as e:
-                print(f"[{time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}][Summarizer] Ошибка обработки: {e}")
+                print("[Summarizer] Ошибка обработки 2")
                 self.result_queue.put(f"[Ошибка] {str(e)}")
 
     def _split_text(self, text, max_tokens=1024):
@@ -96,7 +95,7 @@ class TextSummarizer:
         if current_chunk:
             chunks.append(current_chunk)
 
-        print(f"[{time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}][Summarizer] Текст разбит на {len(chunks)} частей")
+        print("[Summarizer] Текст разбит на {len(chunks)} частей")
         return chunks
 
     def _summarize_chunk(self, text):
@@ -120,7 +119,7 @@ class TextSummarizer:
             no_repeat_ngram_size=3,
             early_stopping=True
         )
-        print(f"[{time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}][Summarizer] Задача выполнена")
+        print("[Summarizer] Задача выполнена")
         return self.tokenizer.decode(summary_ids[0], skip_special_tokens=True)
 
     def shutdown(self):

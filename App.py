@@ -13,6 +13,9 @@ import os
 import NoteEditor # он нужен, хоть и неявно
 import Dialogs
 
+import os
+os.environ['KIVY_NO_ARGS'] = '1'  # Отключает аргументы Kivy
+
 class MainPanel(BoxLayout):
     vault_dir = 'my_vault'
     file_chooser = ObjectProperty(None)
