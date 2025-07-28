@@ -12,3 +12,7 @@
 ![img_1.png](images/img_1.png)
 
 [ссылка на скачивание приложения](https://drive.google.com/drive/folders/18TkAUoISElti_nrq3maMEIn_73YyUV-E?usp=sharing)
+
+
+Стек технологий:
+python, kivy, huggingface(datasets, transformers), pytorch, NLTK
